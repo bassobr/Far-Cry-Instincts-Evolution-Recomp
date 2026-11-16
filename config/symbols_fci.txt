@@ -1,0 +1,61 @@
+# Symbols found by hand (not in XbSymbolDatabase), same format as symbols.txt
+# Far Cry Instincts Evolution (55530060, version 3), addresses checked by hand in its default.xbe. Address 0 = not verified in FCE:
+# no analysis entry, and a replacement config/hle.txt names for it is off (the game code keeps the original).
+
+# DirectSound (src/xdk/dsound.cpp): CDirectSoundStream's vtables as its constructor 0x00431A27 stores them,
+# the full HRTF tables the filter pick at 0x00433544 reads (index of filters, filters with the ITD byte)
+var DSound_StreamVtable = 0x004A1654
+var DSound_StreamVtable2 = 0x004A1644
+var DSound_HrtfFilters = 0x0043ADA0
+var DSound_HrtfIndex = 0x0044C360
+# ---- graphics HLE (src/xdk/d3d8.cpp): D3D symbols located by hand; SCDA-XBERecomp's names where it has them ----
+fun D3D_InitHardwareState = 0x003BE880  # CDevice::Init: SET_OBJECT, DMA contexts, semaphore offset pushes
+fun D3D_InitDefaultState = 0x003BE990  # SCDA D3D_InitDefaultState: default transforms, render and stage states
+fun D3D_InternalAddRef = 0x003BF8E0  # SCDA D3D_InternalAddRef
+fun D3D_InternalRelease = 0x003BFA80  # SCDA D3D_InternalRelease
+fun D3D_DestroyResourceDeferred = 0x003C3F20  # the RunPushBuffer patch record the GPU interrupt applies late
+var D3D_Device = 0x003CAA80  # the static CDevice, D3D_g_pDevice points at it
+var D3D_DirtyFlags = 0x003CA5D8  # lazy state flags (CDevice::Init ORs 0xFF7F7F in)
+var D3D_g_GpuRegisters = 0x003CA5CC  # the NV2A register base D3D reads
+var D3D_g_PushBufferSize = 0x003CD214  # D3D_SetPushBufferSize, default 0x80000
+var D3D_g_PushBufferSegment = 0x003CD210  # default 0x8000
+var D3D_g_DeviceCreated = 0x003CB3B8
+var D3D_g_FixedFunctionShader = 0x003CD0F8  # the device's vertex shader record for FVF draws (CDevice::Init)
+# ---- end graphics HLE ----
+# ---- PC features (src/xdk/game.cpp) ----
+fun Game_BoatStep = 0x0012AA8B  # FCE: verified 2026-11-11 (FCI 0x0019C730; CVehicle vtable 0x004C4468 +0x3C, FCI 0x0060E248): the same; FCI 0x0019C730: thiscall (CVehicle, step time; ret 4), virtual (CVehicle vtable 0x0060E248 +0x3C, the post-step call of the rigid body step 0x003B2FE0 at 0x003B565E): a boat's water model after each physics step (mode +0xA8: 1, 2 CBoat 0x0019C830 with the per-call drag Dampv/Dampvs, 3 wreck 0x0019E3F0, 4 hovercraft 0x0019D630)
+fun Game_CameraUpdate = 0x001F1DA9  # FCE: verified 2026-11-11 (FCI 0x002A84E0, camera in ebx): CCamera update, camera in edi: projection and frustum from fov +0x38, aspect +0x384
+fun Game_FirstPersonProjection = 0x001B1239  # FCE: verified 2026-11-11 (FCI 0x002469E0): renderer in eax: projection of first person items from fov +0x698, viewport and pixel aspect +0x6AC
+fun Game_FrameTimeSource = 0x001802D9  # FCE: found (signature, 30 bytes); FCI 0x001FF8F0: thiscall (frame timer 0x00644488 in ecx), seconds in st(0): the millisecond clock 0x002856F0 x 0.001, the frame timer's time source
+fun Game_LivingAction = 0x002B71A1  # FCE: verified 2026-11-11 (FCI 0x003BE8B0; CLivingEntity vtable 0x004DD4C8 +0x18, FCI 0x00625C40): the same; FCI 0x003BE8B0: thiscall (living entity, pe_action*; ret 4), virtual (CLivingEntity vtable 0x00625C40 +0x18): Action; pe_action_move with air control 1 (swimming) sets velocity = direction + the last step's set-velocity change (+0x730)
+fun Game_LivingMove = 0x002BAD24  # FCE: verified 2026-11-11 (FCI 0x003C4890: stdcall living, &step time, &move; ret 0xC): living entity in eax, (&step time, &move; ret 8); only caller 0x002BC3C4 in the step move 0x002BC0EF; FCI 0x003C4890: stdcall (living entity, &step time, &move; ret 0xC), called only by the living step's move 0x003C6560: collision sweep 0x003C2570 only for moves above 1 mm (0x003C5003)
+fun Game_LivingStep = 0x002BC6C6  # FCE: verified 2026-11-11 (FCI 0x003C6BE0; CLivingEntity vtable 0x004DD4C8 +0x44): the same, move 0x002BC0EF; FCI 0x003C6BE0: thiscall (living entity, step time; ret 4), virtual (CLivingEntity vtable 0x00625C40 +0x44, called by the world step 0x003741E0): a step of a living entity (player, AI): velocity 0x003C5B00, move 0x003C6560
+fun Game_PathFollow = 0x0016D168  # FCE: verified 2026-11-11 (FCI 0x001E50B0, path in ebx): path in edi, the same stack arguments; only caller 0x0016C014 in 0x0016BFFE, called only by the step move at 0x002BC381; FCI 0x001E50B0: stdcall (&position, &move; ret 8), path in ebx (points of 16 bytes at [+0x14, +0x18), index +0x20): turns an AI's step move toward the path, pursuit with the move length as look-ahead (only caller 0x003C6859 in the living step move 0x003C6560)
+fun Game_PhysicsStep = 0x00282B1C  # FCE: verified 2026-11-11 (FCI 0x003741E0: stdcall world, frame time; ret 8): world in edi, frame time on the stack (ret 4), called once per frame at 0x0017E381; FCI 0x003741E0: stdcall (physics world, frame time; ret 8): CPhysicalWorld time step, called once per frame by 0x001FCF40
+fun Game_PlayerAngles = 0x00075C3E  # FCE: verified 2026-11-11 (FCI 0x00098AE0; CPlayer vtable entry 0x004B05BC, FCI 0x005FC3F0): the same; timer +0x244, cvar block +0x248 (+0xE0 pitch, +0xE8 roll), FCI +0x254/+0x258 (+0xDC, +0xE4); FCI 0x00098AE0: thiscall (player, ?; ret 4), virtual (0x005FC3F0): the player's view angles with the water bob (p_waterbob_*, added per frame)
+fun Game_VehicleImpulses = 0x002C0539  # FCE: verified 2026-11-11 (FCI 0x003CC9A0, vtable 0x00625D40 +0xD8): CWheeledVehicleEntity vtable 0x004DD5C8 +0xDC (one more slot), called by the rigid body step at 0x002B1081; FCI 0x003CC9A0: thiscall (wheeled vehicle, step time; ret 4), virtual (CWheeledVehicleEntity vtable 0x00625D40 +0xD8, called by the rigid body step 0x003B2FE0): all wheel forces of a step (suspension, engine, tyre friction)
+fun Game_PlayerIsUnderWater = 0x0009B9DA  # FCE: verified 2026-11-11 (FCI 0x000C7710): the same; flag CPlayer+0x42C (FCI +0x43C); FCI 0x000C7710: thiscall (script object: CPlayer at +0x10; script function handler; ret 4): the script binding IsUnderWater of a player or AI, the flag CPlayer+0x43C (Merc:CheckDrowning kills on it)
+fun Game_SystemStep = 0  # OFF for 0.1.0 (no measured effect on the game, as in FCI): the verified address is 0x0017E353. FCE: verified 2026-11-15 (FCI 0x001FCF40: cdecl in esi, flags, frame time): cdecl (flags, mode, frame time), ebp frame, called once per frame at 0x0017E295: the physics step (0x00282B1C at 0x0017E381) and, unless paused, the AI system update 0x0014123A (system [0x0056B500] in eax; phase +0x74 0..3 advanced per call, list +0x48 + 12 x phase gets the full update 0x001442BC, +0x20 call counter; FCI 0x001B69B0, +0x70/+0x44/+0x1C) and the formation manager 0x001542B6 ([0x0056B504])
+fun Game_AIVehicleDrive = 0  # OFF for 0.1.0 (no measured effect on its own): the verified address is 0x0007F99B. FCE: found 2026-11-15 (not in FCI): the AI proxy (vtable 0x004B2D18, Update +8 = 0x0007F8A0) drives a car (proxy +0xA0 = 0x32): proxy in eax, AI state on the stack (ret 4); frame time 0x00180281, timers +0x114/+0x118; steering = sine of the angle between the heading and the move direction (state +0x38), gas/brake from the desired speed (+0x58), the processing command to the vehicle 0x0012C298 (-> 0x0012D981, pe_action_drive)
+fun Game_AIUpdate = 0x0014123A  # FCE: found 2026-11-15 (FCI 0x001B69B0, there a tail jump): the AI system update, system in eax, no stack arguments, plain ret; called once per frame at 0x0017E3C2 from the step 0x0017E353 (unless paused); full update of the list at phase +0x74, light updates, proxies (AI drivers 0x0007F99B), signals, goal pipes; frame time 0x00180281 (frame timer +0x68)
+fun Game_ContactPolygon = 0x00310E6F  # FCE: verified 2026-11-11 (FCI 0x00441800, two callers, edi = geom_contact): cdecl (n1, poly1, n2, closed, ids out; eax = slot, ecx = poly2), only caller 0x0029C629, ebx = the geom_contact (area +0x68); FCI 0x00441800: cdecl (n1, poly1, closed, ids out; eax = slot for the points' address, ecx = n2, edx = poly2): 2D polygon intersection of a trimesh contact area, its point count; called only by 0x00393C60 (CTriMesh::Intersect, edi = the geom_contact, area at +0x68)
+fun Game_PlayerLand = 0x0006EEF8  # FCE: verified 2026-11-11 (FCI 0x00090460; CPlayer vtable entry 0x004B0614, FCI 0x005FC448): the same, event Land 0x17 with -[CPlayer+0xB94] (FCI 0x18, +0xB34); FCI 0x00090460: thiscall (CPlayer), virtual (CPlayer vtable entry at 0x005FC448): sends the script event Land (0x18) with fEntitySpeed = -[CPlayer+0xB34]
+fun Game_ScriptGlobals = 0x0018FA11  # FCE: verified 2026-11-11 (FCI 0x00215C10): the same; SetGlobalValue 0x001E0BB8 takes the script system in edi and the name on the stack (FCI 0x0028B3B0: eax, ebx); FCI 0x00215C10: stdcall (frame time, AI ticks; ret 8), _time in xmm0: sets the Lua globals _time, _frametime, _aitick each frame (SetGlobalValue 0x0028B3B0), then the Lua garbage collection
+fun Game_EntityTimer = 0x0001A1F4  # FCE: verified 2026-11-11 (FCI 0x0001DD40; CEntity vtable 0x004AA7E0 +0x124, FCI 0x005F6AA0): the same, called by the entity system update at 0x00015558; FCI 0x0001DD40: thiscall (CEntity, timer period in ms = CEntity+0x3E0; ret 4), virtual (CEntity vtable 0x005F6AA0 +0x124, called by the entity system update at 0x00035162): OnTimer, calls the script state function OnTimer (0x00022850, event 4)
+# ---- end PC features ----
+# ---- PC shadows (src/xdk/shadows.cpp) ----
+fun Game_ShadowPass = 0x003227F5  # FCE: verified 2026-11-11 (FCI 0x00458C80): (engine, ?, view environment: camera +0, sun shadow radius +0x34, ...; 7 args, ret 0x1C): shadow casting lights, their cameras and depth passes; sun camera 0x00322260, its camera a local 0xAD0 below the entry esp (FCI 0x3D0)
+fun Game_ShadowReceiveTest = 0x0033DDF3  # FCE: verified 2026-11-11 (FCI 0x0047A2C0: sector in eax, camera position in ecx): sector in edi (ret 0x14): receives the sun shadow when (distance - 46) <= [engine+0x10C4] (FCI +0x10B4), engine [0x0056B510]
+# ---- end PC shadows ----
+# ---- PC level of detail (src/xdk/lod.cpp) ----
+fun Game_EngineCVars = 0x003432D9  # FCE: verified 2026-11-11 (FCI 0x00481B30): block in eax (0x108 bytes): registers the 3D engine's console variables bound to its fields (e_obj_lod_ratio +0xF8, e_obj_view_dist_ratio +0xFC, e_obj_sprite_switch_dist_ratio +0x100; console [0x0056B4E4], RegisterFloat 0x0017EED6)
+# ---- end PC level of detail ----
+# ---- start level (src/hle/start_level.cpp, FCI_START_LEVEL) ----
+fun Game_PushCommand = 0x00012050  # FCE: verified 2026-11-11 (FCI 0x00012000: edx = text, game; ret 4): stdcall (game, command text; ret 8): queues a game command (StartLevel, ReturnToMenu, ...) at game+0x3BC (FCI +0x3A4)
+# ---- end start level ----
+# ---- mouse look (src/hle/mouse_look.cpp) ----
+fun Game_LookInput = 0x00030CB2  # FCE: verified 2026-11-11 (FCI 0x0003D450): stdcall (aim controller, processing command, TURNLR, TURNUD; ret 0x10): the look input of a client; writes the frame's yaw/pitch change in degrees to the command +0xBC/+0xC0 (command at client +0x8C8, FCI +0x60C)
+# ---- end mouse look ----
+# ---- map editor (src/hle/map_editor.cpp) ----
+fun Game_LaunchMapEditor = 0x000FB742  # FCE: verified 2026-11-11 (FCI 0x0014F880, called from 0x0014F155): main menu "Map Editor" (called from 0x000FB1D1): state block, shuts the game down, XLaunchNewImage("D:\ige.xbe"); no arguments, plain ret
+# ---- end map editor ----
